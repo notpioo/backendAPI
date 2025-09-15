@@ -1,0 +1,210 @@
+
+{% extends "base.html" %}
+
+{% block title %}Models - Chatbot Admin{% endblock %}
+{% block page_title %}Models{% endblock %}
+
+{% block content %}
+<div class="stat-card">
+    <h3>Current AI Model</h3>
+    <div class="stat-value">Gemini 2.5 Flash</div>
+    <p class="announcement-content">Advanced language model for academic conversations with natural Indonesian language support.</p>
+</div>
+
+<div class="announcement-section" style="margin-top: 20px;">
+    <h2>GEMINI API Configuration</h2>
+    
+    <!-- API Key Display Section -->
+    <div class="form-group">
+        <label>Current API Key</label>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <input type="password" id="api-key-display" class="form-control" readonly style="flex: 1;">
+            <button type="button" id="toggle-api-key" class="btn btn-secondary" onclick="toggleAPIKeyVisibility()">
+                <i class="fas fa-eye" id="eye-icon"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- API Status -->
+    <div class="form-group">
+        <label>API Status</label>
+        <div class="stat-value" id="api-status" style="color: #68d391;">
+            <i class="fas fa-circle" style="font-size: 12px;"></i> Connected
+        </div>
+    </div>
+    
+    <!-- Edit API Form -->
+    <div class="form-group">
+        <label>Update API Key</label>
+        <form id="api-update-form" onsubmit="updateAPIKey(event)">
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <input type="password" id="new-api-key" class="form-control" placeholder="Enter new GEMINI API key" required style="flex: 1;">
+                <button type="button" class="btn btn-secondary" onclick="toggleNewAPIKeyVisibility()">
+                    <i class="fas fa-eye" id="new-eye-icon"></i>
+                </button>
+            </div>
+            <button type="submit" class="btn btn-warning" id="update-btn">
+                <i class="fas fa-sync-alt"></i> Update API Key
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="announcement-section" style="margin-top: 20px;">
+    <h2>Model Configuration</h2>
+    <div class="form-group">
+        <label>Model Temperature</label>
+        <input type="number" class="form-control" value="0.7" min="0" max="1" step="0.1">
+    </div>
+    <div class="form-group">
+        <label>Max Response Length</label>
+        <input type="number" class="form-control" value="1000" min="100" max="2000">
+    </div>
+    <button class="btn btn-primary">Update Configuration</button>
+</div>
+
+<script>
+let currentAPIKey = '';
+let isAPIKeyVisible = false;
+let isNewAPIKeyVisible = false;
+
+// Load current API key when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadCurrentAPIKey();
+});
+
+async function loadCurrentAPIKey() {
+    try {
+        const response = await fetch('/api/models/current-api-key');
+        const data = await response.json();
+        
+        if (data.success && data.api_key) {
+            currentAPIKey = data.api_key;
+            updateAPIKeyDisplay();
+            updateAPIStatus(true);
+        } else {
+            currentAPIKey = '';
+            updateAPIKeyDisplay();
+            updateAPIStatus(false);
+        }
+    } catch (error) {
+        console.error('Error loading API key:', error);
+        currentAPIKey = '';
+        updateAPIKeyDisplay();
+        updateAPIStatus(false);
+    }
+}
+
+function updateAPIKeyDisplay() {
+    const display = document.getElementById('api-key-display');
+    if (currentAPIKey) {
+        if (isAPIKeyVisible) {
+            display.value = currentAPIKey;
+        } else {
+            // Create masked version showing only first 4 and last 4 characters
+            if (currentAPIKey.length > 8) {
+                display.value = currentAPIKey.substring(0, 4) + '*'.repeat(currentAPIKey.length - 8) + currentAPIKey.substring(currentAPIKey.length - 4);
+            } else {
+                display.value = '*'.repeat(currentAPIKey.length);
+            }
+        }
+    } else {
+        display.value = 'No API key configured';
+    }
+}
+
+function toggleAPIKeyVisibility() {
+    isAPIKeyVisible = !isAPIKeyVisible;
+    const eyeIcon = document.getElementById('eye-icon');
+    
+    if (isAPIKeyVisible) {
+        eyeIcon.className = 'fas fa-eye-slash';
+    } else {
+        eyeIcon.className = 'fas fa-eye';
+    }
+    
+    updateAPIKeyDisplay();
+}
+
+function toggleNewAPIKeyVisibility() {
+    isNewAPIKeyVisible = !isNewAPIKeyVisible;
+    const newKeyInput = document.getElementById('new-api-key');
+    const newEyeIcon = document.getElementById('new-eye-icon');
+    
+    if (isNewAPIKeyVisible) {
+        newKeyInput.type = 'text';
+        newEyeIcon.className = 'fas fa-eye-slash';
+    } else {
+        newKeyInput.type = 'password';
+        newEyeIcon.className = 'fas fa-eye';
+    }
+}
+
+async function updateAPIKey(event) {
+    event.preventDefault();
+    
+    const newAPIKey = document.getElementById('new-api-key').value.trim();
+    const updateBtn = document.getElementById('update-btn');
+    
+    if (!newAPIKey) {
+        showError('Please enter a valid API key');
+        return;
+    }
+    
+    // Show loading state
+    updateBtn.disabled = true;
+    updateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+    
+    try {
+        const response = await fetch('/api/models/update-api-key', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                api_key: newAPIKey
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            currentAPIKey = newAPIKey;
+            updateAPIKeyDisplay();
+            updateAPIStatus(true);
+            document.getElementById('new-api-key').value = '';
+            showSuccess('API key updated successfully!');
+        } else {
+            showError(data.message || 'Failed to update API key');
+        }
+    } catch (error) {
+        console.error('Error updating API key:', error);
+        showError('Network error occurred while updating API key');
+    } finally {
+        // Reset button state
+        updateBtn.disabled = false;
+        updateBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Update API Key';
+    }
+}
+
+function updateAPIStatus(isConnected) {
+    const statusElement = document.getElementById('api-status');
+    
+    if (isConnected) {
+        statusElement.innerHTML = '<i class="fas fa-circle" style="font-size: 12px;"></i> Connected';
+        statusElement.style.color = '#68d391';
+    } else {
+        statusElement.innerHTML = '<i class="fas fa-circle" style="font-size: 12px;"></i> Disconnected';
+        statusElement.style.color = '#f56565';
+    }
+}
+
+function showSuccess(message) {
+    alert('Success: ' + message);
+}
+
+function showError(message) {
+    alert('Error: ' + message);
+}
+</script>
+{% endblock %}

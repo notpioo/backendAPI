@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block title %}Knowledge Management - Chatbot Admin{% endblock %}
+{% block page_title %}Knowledge Management{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <button class="btn btn-primary" onclick="showAddModal()">
+        <i class="fas fa-plus"></i> Add New Knowledge
+    </button>
+</div>
+
+<div class="table-container">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Question</th>
+                <th>Category</th>
+                <th>Keywords</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in knowledge_list %}
+            <tr>
+                <td>{{ item.question[:100] }}{% if item.question|length > 100 %}...{% endif %}</td>
+                <td>{{ item.category or 'General' }}</td>
+                <td>{{ item.keywords or '-' }}</td>
+                <td>{{ item.created_at[:10] if item.created_at else '-' }}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn btn-sm btn-warning" onclick="editKnowledge('{{ item.id }}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteKnowledge('{{ item.id }}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" style="text-align: center; color: #a0aec0;">
+                    No knowledge entries found. Click "Add New Knowledge" to get started.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Add/Edit Modal -->
+<div id="knowledgeModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Add New Knowledge</h3>
+            <button class="close" onclick="hideModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="knowledgeForm">
+                <div class="form-group">
+                    <label for="question">Pertanyaan *</label>
+                    <textarea class="form-control" id="question" required rows="3" placeholder="Masukkan pertanyaan yang akan dijawab chatbot"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="answer">Jawaban *</label>
+                    <textarea class="form-control" id="answer" required rows="5" placeholder="Masukkan jawaban yang akan diberikan chatbot"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="category">Kategori</label>
+                    <select class="form-control" id="category">
+                        <option value="umum">Umum</option>
+                        <option value="akademik">Akademik</option>
+                        <option value="adminisatasi">Administrasi</option>
+                        <option value="fasilitas">Fasilitas</option>
+                        <option value="peraturan">Peraturan</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="keywords">Keywords</label>
+                    <input type="text" class="form-control" id="keywords" placeholder="kata kunci, dipisah koma, untuk pencarian">
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn" onclick="hideModal()">Batal</button>
+            <button type="submit" form="knowledgeForm" class="btn btn-primary">
+                <span id="saveButtonText">Simpan</span>
+                <div id="saveButtonLoading" class="loading" style="display: none;"></div>
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentEditId = null;
+
+function showAddModal() {
+    document.getElementById('modalTitle').textContent = 'Tambah Knowledge Baru';
+    document.getElementById('knowledgeForm').reset();
+    document.getElementById('category').value = 'umum';
+    currentEditId = null;
+    document.getElementById('knowledgeModal').style.display = 'block';
+    // Focus on first input
+    setTimeout(() => document.getElementById('question').focus(), 100);
+}
+
+function hideModal() {
+    document.getElementById('knowledgeModal').style.display = 'none';
+    resetSaveButton();
+}
+
+function editKnowledge(id) {
+    currentEditId = id;
+    document.getElementById('modalTitle').textContent = 'Edit Knowledge';
+
+    // Fetch current data and populate form
+    fetch(`/api/knowledge/${id}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Received data:', data); // Debug log
+            if (data.success && data.knowledge) {
+                document.getElementById('question').value = data.knowledge.question || '';
+                document.getElementById('answer').value = data.knowledge.answer || '';
+                document.getElementById('category').value = data.knowledge.category || 'umum';
+                document.getElementById('keywords').value = data.knowledge.keywords || '';
+                document.getElementById('knowledgeModal').style.display = 'block';
+                setTimeout(() => document.getElementById('question').focus(), 100);
+            } else {
+                const errorMessage = data.error || 'Data knowledge tidak ditemukan atau format tidak sesuai.';
+                showError('Gagal memuat data knowledge: ' + errorMessage);
+            }
+        })
+        .catch(error => {
+            console.error('Fetch error:', error); // Debug log
+            showError('Terjadi kesalahan saat memuat data: ' + error.message);
+        });
+}
+
+function deleteKnowledge(id) {
+    if (confirm('Apakah Anda yakin ingin menghapus knowledge ini?')) {
+        fetch(`/api/knowledge/${id}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccess('Knowledge berhasil dihapus');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showError('Gagal menghapus knowledge: ' + data.error);
+            }
+        })
+        .catch(error => {
+            showError('Terjadi kesalahan: ' + error.message);
+        });
+    }
+}
+
+function showSaveLoading() {
+    document.getElementById('saveButtonText').style.display = 'none';
+    document.getElementById('saveButtonLoading').style.display = 'inline-block';
+    document.querySelector('button[form="knowledgeForm"]').disabled = true;
+}
+
+function resetSaveButton() {
+    document.getElementById('saveButtonText').style.display = 'inline';
+    document.getElementById('saveButtonLoading').style.display = 'none';
+    document.querySelector('button[form="knowledgeForm"]').disabled = false;
+}
+
+function showSuccess(message) {
+    // Simple success notification
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #68d391;
+        color: #000;
+        padding: 15px 20px;
+        border-radius: 5px;
+        z-index: 10000;
+        font-weight: bold;
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        document.body.removeChild(notification);
+    }, 3000);
+}
+
+function showError(message) {
+    // Simple error notification
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #e53e3e;
+        color: #fff;
+        padding: 15px 20px;
+        border-radius: 5px;
+        z-index: 10000;
+        font-weight: bold;
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        document.body.removeChild(notification);
+    }, 5000);
+}
+
+document.getElementById('knowledgeForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    showSaveLoading();
+
+    const formData = {
+        question: document.getElementById('question').value,
+        answer: document.getElementById('answer').value,
+        category: document.getElementById('category').value,
+        keywords: document.getElementById('keywords').value
+    };
+
+    const url = currentEditId ? `/api/knowledge/${currentEditId}` : '/api/knowledge/';
+    const method = currentEditId ? 'PUT' : 'POST';
+
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        resetSaveButton();
+        if (data.success) {
+            hideModal();
+            showSuccess('Knowledge berhasil disimpan!');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showError('Gagal menyimpan knowledge: ' + data.error);
+        }
+    })
+    .catch(error => {
+        resetSaveButton();
+        showError('Terjadi kesalahan: ' + error.message);
+    });
+});
+
+// Close modal when clicking outside
+document.getElementById('knowledgeModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        hideModal();
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && document.getElementById('knowledgeModal').style.display === 'block') {
+        hideModal();
+    }
+});
+</script>
+{% endblock %}

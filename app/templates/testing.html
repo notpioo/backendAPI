@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Chatbot Testing - Chatbot Admin{% endblock %}
+{% block page_title %}Chatbot Testing{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    <div class="chat-messages" id="chatMessages">
+        <div class="chat-message bot">
+            <strong>Chatbot:</strong> Halo! Saya adalah asisten virtual akademik kampus. Silakan ajukan pertanyaan seputar akademik, pembelajaran, atau informasi kampus.
+        </div>
+    </div>
+    <div class="chat-input-area">
+        <input type="text" class="form-control chat-input" id="chatInput" placeholder="Ketik pertanyaan Anda di sini...">
+        <button class="btn btn-primary" onclick="sendMessage()">
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    // Add user message to chat
+    addMessageToChat('user', message);
+    input.value = '';
+    
+    // Add loading message
+    const loadingDiv = addMessageToChat('bot', '<div class="loading"></div> Sedang memproses...');
+    
+    // Send to API
+    fetch('/api/chat/message', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: message })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Remove loading message
+        loadingDiv.remove();
+        
+        // Add bot response
+        addMessageToChat('bot', data.response || 'Maaf, terjadi kesalahan sistem.');
+    })
+    .catch(error => {
+        loadingDiv.remove();
+        addMessageToChat('bot', 'Maaf, terjadi kesalahan koneksi. Silakan coba lagi.');
+    });
+}
+
+function addMessageToChat(sender, message) {
+    const chatMessages = document.getElementById('chatMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `chat-message ${sender}`;
+    
+    const senderLabel = sender === 'user' ? 'Anda' : 'Chatbot';
+    messageDiv.innerHTML = `<strong>${senderLabel}:</strong> ${message}`;
+    
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    return messageDiv;
+}
+
+// Enter key to send message
+document.getElementById('chatInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        sendMessage();
+    }
+});
+</script>
+{% endblock %}

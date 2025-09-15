@@ -1,0 +1,180 @@
+
+{% extends "base.html" %}
+
+{% block title %}API Documentation - Chatbot Admin{% endblock %}
+{% block page_title %}API Documentation{% endblock %}
+
+{% block content %}
+<div class="announcement-section">
+    <h2>Chatbot API Endpoints</h2>
+    
+    <!-- Base URL Information -->
+    <div style="margin-bottom: 30px; padding: 20px; background-color: #1a202c; border-radius: 8px; border-left: 4px solid #3182ce;">
+        <h3 style="color: #68d391; margin-bottom: 10px;">🌐 Base URL</h3>
+        <div class="form-control" style="background-color: #0f1419; color: #68d391; font-family: monospace; margin: 10px 0; font-size: 16px;">
+            <span id="base-url">Loading...</span>
+        </div>
+        <p class="announcement-content" style="margin-top: 10px; color: #a0aec0;">
+            Base URL will be automatically detected based on your environment (Replit hosting or localhost).
+        </p>
+    </div>
+    
+    <div style="margin-bottom: 30px;">
+        <h3 style="color: #3182ce; margin-bottom: 10px;">📤 POST /api/chat/message</h3>
+        <p class="announcement-content">Send a message to the chatbot and get AI response.</p>
+        
+        <h4 style="color: #68d391; margin: 15px 0 5px 0;">Request Body:</h4>
+        <div class="form-control" style="background-color: #0f1419; color: #68d391; font-family: monospace; margin: 10px 0;">
+{
+  "message": "Apa itu sistem kredit semester?"
+}
+        </div>
+        
+        <h4 style="color: #68d391; margin: 15px 0 5px 0;">Response:</h4>
+        <div class="form-control" style="background-color: #0f1419; color: #68d391; font-family: monospace;">
+{
+  "success": true,
+  "response": "Sistem Kredit Semester (SKS) adalah...",
+  "source": "gemini-ai"
+}
+        </div>
+    </div>
+    
+    <div style="margin-bottom: 30px;">
+        <h3 style="color: #3182ce; margin-bottom: 10px;">📋 GET /api/knowledge/</h3>
+        <p class="announcement-content">Get all knowledge entries from database.</p>
+        
+        <h4 style="color: #68d391; margin: 15px 0 5px 0;">Response:</h4>
+        <div class="form-control" style="background-color: #0f1419; color: #68d391; font-family: monospace;">
+{
+  "success": true,
+  "data": [...],
+  "total": 10
+}
+        </div>
+    </div>
+    
+    <div style="margin-bottom: 30px;">
+        <h3 style="color: #3182ce; margin-bottom: 10px;">➕ POST /api/knowledge/</h3>
+        <p class="announcement-content">Add new knowledge entry to database.</p>
+        
+        <h4 style="color: #68d391; margin: 15px 0 5px 0;">Request Body:</h4>
+        <div class="form-control" style="background-color: #0f1419; color: #68d391; font-family: monospace; margin: 10px 0;">
+{
+  "question": "Apa itu KRS?",
+  "answer": "KRS adalah Kartu Rencana Studi...",
+  "category": "akademik",
+  "keywords": "krs, kartu, studi"
+}
+        </div>
+    </div>
+    
+    <div style="margin-bottom: 30px;">
+        <h3 style="color: #3182ce; margin-bottom: 10px;">✏️ PUT /api/knowledge/&lt;id&gt;</h3>
+        <p class="announcement-content">Update existing knowledge entry.</p>
+        
+        <h4 style="color: #68d391; margin: 15px 0 5px 0;">Request Body:</h4>
+        <div class="form-control" style="background-color: #0f1419; color: #68d391; font-family: monospace; margin: 10px 0;">
+{
+  "question": "Updated question",
+  "answer": "Updated answer",
+  "category": "updated_category",
+  "keywords": "updated keywords"
+}
+        </div>
+    </div>
+    
+    <div style="margin-bottom: 30px;">
+        <h3 style="color: #3182ce; margin-bottom: 10px;">🗑️ DELETE /api/knowledge/&lt;id&gt;</h3>
+        <p class="announcement-content">Delete knowledge entry from database.</p>
+    </div>
+    
+    <div style="margin-bottom: 30px;">
+        <h3 style="color: #3182ce; margin-bottom: 10px;">📢 GET /api/announcement/</h3>
+        <p class="announcement-content">Get current announcement data.</p>
+        
+        <h4 style="color: #68d391; margin: 15px 0 5px 0;">Response:</h4>
+        <div class="form-control" style="background-color: #0f1419; color: #68d391; font-family: monospace;">
+{
+  "success": true,
+  "data": {
+    "title": "Announcement Title",
+    "message": "Announcement message",
+    "updated_at": "2025-01-15 10:30:00"
+  }
+}
+        </div>
+    </div>
+    
+    <div style="margin-bottom: 30px;">
+        <h3 style="color: #3182ce; margin-bottom: 10px;">🔄 POST /api/announcement/</h3>
+        <p class="announcement-content">Update announcement data.</p>
+        
+        <h4 style="color: #68d391; margin: 15px 0 5px 0;">Request Body:</h4>
+        <div class="form-control" style="background-color: #0f1419; color: #68d391; font-family: monospace; margin: 10px 0;">
+{
+  "title": "New Announcement",
+  "message": "This is the new announcement message"
+}
+        </div>
+    </div>
+    
+    <div>
+        <h3 style="color: #3182ce; margin-bottom: 10px;">❤️ GET /api/chat/health</h3>
+        <p class="announcement-content">Check API health status.</p>
+        
+        <h4 style="color: #68d391; margin: 15px 0 5px 0;">Response:</h4>
+        <div class="form-control" style="background-color: #0f1419; color: #68d391; font-family: monospace;">
+{
+  "status": "online",
+  "service": "chatbot-api",
+  "message": "API is running successfully"
+}
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-detect and display base URL
+document.addEventListener('DOMContentLoaded', function() {
+    const protocol = window.location.protocol;
+    const hostname = window.location.hostname;
+    const port = window.location.port;
+    
+    let baseUrl;
+    
+    // Check if running on Replit
+    if (hostname.includes('replit.dev') || hostname.includes('replit.app') || hostname.includes('replit.co')) {
+        baseUrl = `${protocol}//${hostname}`;
+    } 
+    // Check if running on localhost
+    else if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        baseUrl = port ? `${protocol}//${hostname}:${port}` : `${protocol}//${hostname}`;
+    }
+    // Other hosting environments
+    else {
+        baseUrl = port ? `${protocol}//${hostname}:${port}` : `${protocol}//${hostname}`;
+    }
+    
+    document.getElementById('base-url').textContent = baseUrl;
+    
+    // Add copy button functionality
+    const baseUrlElement = document.getElementById('base-url');
+    baseUrlElement.style.cursor = 'pointer';
+    baseUrlElement.title = 'Click to copy';
+    
+    baseUrlElement.addEventListener('click', function() {
+        navigator.clipboard.writeText(baseUrl).then(function() {
+            const originalText = baseUrlElement.textContent;
+            baseUrlElement.textContent = 'Copied!';
+            baseUrlElement.style.color = '#68d391';
+            
+            setTimeout(function() {
+                baseUrlElement.textContent = originalText;
+                baseUrlElement.style.color = '#68d391';
+            }, 1000);
+        });
+    });
+});
+</script>
+{% endblock %}

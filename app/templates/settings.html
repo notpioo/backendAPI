@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - Chatbot Admin{% endblock %}
+{% block page_title %}Settings{% endblock %}
+
+{% block content %}
+<div class="announcement-section">
+    <h2>System Settings</h2>
+    
+    <div class="form-group">
+        <label>Firebase Database URL</label>
+        <input type="text" class="form-control" placeholder="https://your-project-default-rtdb.firebaseio.com">
+    </div>
+    
+    <div class="form-group">
+        <label>Gemini API Status</label>
+        <div class="stat-value online-status">Connected</div>
+    </div>
+    
+    <div class="form-group">
+        <label>Cache Control</label>
+        <button class="btn btn-warning">Clear All Cache</button>
+    </div>
+    
+    <button class="btn btn-primary">Save Settings</button>
+</div>
+{% endblock %}

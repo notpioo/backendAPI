@@ -1,0 +1,134 @@
+
+{% extends "base.html" %}
+
+{% block title %}Announcement - Chatbot Admin{% endblock %}
+{% block page_title %}Announcement{% endblock %}
+
+{% block content %}
+<div class="announcement-section">
+    <h2>System Announcements</h2>
+    <form id="announcementForm">
+        <div class="form-group">
+            <label for="title">Title</label>
+            <input type="text" class="form-control" id="title" required placeholder="Enter announcement title">
+        </div>
+        <div class="form-group">
+            <label for="message">Message</label>
+            <textarea class="form-control" id="message" required rows="6" placeholder="Enter announcement message"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">
+            <span id="saveButtonText">Update Announcement</span>
+            <span id="saveButtonLoading" style="display: none;">
+                <i class="fas fa-spinner fa-spin"></i> Saving...
+            </span>
+        </button>
+    </form>
+</div>
+
+<script>
+// Load current announcement on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadCurrentAnnouncement();
+});
+
+function loadCurrentAnnouncement() {
+    fetch('/api/announcement/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('title').value = data.data.title;
+                document.getElementById('message').value = data.data.message;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading announcement:', error);
+        });
+}
+
+function showSaveLoading() {
+    document.getElementById('saveButtonText').style.display = 'none';
+    document.getElementById('saveButtonLoading').style.display = 'inline';
+    document.querySelector('button[type="submit"]').disabled = true;
+}
+
+function resetSaveButton() {
+    document.getElementById('saveButtonText').style.display = 'inline';
+    document.getElementById('saveButtonLoading').style.display = 'none';
+    document.querySelector('button[type="submit"]').disabled = false;
+}
+
+function showSuccess(message) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #68d391;
+        color: #000;
+        padding: 15px 20px;
+        border-radius: 5px;
+        z-index: 10000;
+        font-weight: bold;
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        document.body.removeChild(notification);
+    }, 3000);
+}
+
+function showError(message) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #e53e3e;
+        color: #fff;
+        padding: 15px 20px;
+        border-radius: 5px;
+        z-index: 10000;
+        font-weight: bold;
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        document.body.removeChild(notification);
+    }, 5000);
+}
+
+document.getElementById('announcementForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    showSaveLoading();
+
+    const formData = {
+        title: document.getElementById('title').value,
+        message: document.getElementById('message').value
+    };
+
+    fetch('/api/announcement/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        resetSaveButton();
+        if (data.success) {
+            showSuccess('Announcement berhasil diupdate!');
+        } else {
+            showError('Gagal mengupdate announcement: ' + data.error);
+        }
+    })
+    .catch(error => {
+        resetSaveButton();
+        showError('Terjadi kesalahan: ' + error.message);
+    });
+});
+</script>
+{% endblock %}
